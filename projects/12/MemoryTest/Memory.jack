@@ -1,0 +1,81 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+
+    static Array ram;
+    static Array HEAPBASE;
+    static int HEAPSIZE;
+
+    /** Initializes the class. */
+    function void init() {
+        let ram = 0;
+        let HEAPBASE = 2048;
+        let HEAPSIZE = 14331;
+        let HEAPBASE[0] = 0; // initially available
+        let HEAPBASE[1] = HEAPSIZE; // set size, initially whole heap
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+
+        return ram[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let ram[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size) {
+        var Array found;
+        var int newSize, allocedAddr;
+        let found = Memory.find(size + 2);
+        
+        let newSize = found[1] - size + 2;
+        let allocedAddr = newSize + 2;
+        let found[newSize] = 0; // set allocated node as not-available
+        let found[newSize + 1] = size; // set size of allocated node
+        
+        let found[1] = found[1] - size - 2; // update size
+        return allocedAddr;
+    }
+
+    /* finds available block */
+    function int find(int size){
+        var Array found;
+        let found = HEAPBASE;
+        while(~(found[1] > size)){
+            if(~(found[0] = 0)){
+                let found = found[0]; // move to the next node
+            }
+        }
+        return found;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var Array tmp;
+        let tmp = HEAPBASE;
+        while(~(tmp = 0)){
+            let tmp = tmp[0];
+        }
+
+        let tmp[0] = o;
+
+        return;
+    }
+    
+}

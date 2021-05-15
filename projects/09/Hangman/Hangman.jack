@@ -1,0 +1,348 @@
+class Hangman {
+    field String correctAnswer;
+    field int guessesLeft;
+    field Array guesses;
+    field String currentWord;
+    field Array lexicon;
+
+    /*
+    * Constructor
+    * Sets up everything for game to start
+    */
+    constructor Hangman new(){     
+        let guessesLeft = 6;
+        do initLexicon();
+        do initCorrectWord();
+        do initGuesses();
+        do initCurrentWord();
+        return this;
+    }
+
+    /*
+    * Sets up lexicon before game starts
+    */
+    method void initLexicon(){
+        let lexicon = Array.new(10);
+        let lexicon[0] = "HANGMAN";
+        let lexicon[1] = "CALENDAR";
+        let lexicon[2] = "DEADLINE";
+        let lexicon[3] = "NANDTOTETRIS";
+        let lexicon[4] = "HACK";
+        let lexicon[5] = "JACK";
+        let lexicon[6] = "COMPUTER";
+        let lexicon[7] = "ASSEMBLER";
+        let lexicon[8] = "PROJECT";
+        let lexicon[9] = "HOMEWORK";
+        
+        return;
+    }
+
+
+    /*
+    * Chooses correct word "randomly" from lexicon
+    */
+    method void initCorrectWord(){
+        var char n;
+        var int rand;
+
+        do Output.printString("Please enter the number:");
+        let n = Keyboard.readChar();
+        let rand = mod(n);
+        
+        let correctAnswer = lexicon[rand];
+        return;
+    }
+
+    /*
+    * Makes array of booleans
+    * Initially sets every value to false
+    */
+    method void initGuesses(){
+        var int i;
+        var int length;
+        let i = 0;
+        let length = correctAnswer.length();
+        let guesses = Array.new(length);
+        
+        while(i < length){
+            let guesses[i] = false;
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /*
+    * Initially makes currentWord with size of current answer
+    * and sets every char to underline ('_')
+    */
+    method void initCurrentWord(){
+        var int i;
+        var int length;
+        let i = 0;
+        let length = correctAnswer.length();
+        let currentWord = String.new(length);
+        
+        while(i < length){
+            do currentWord.appendChar(95);
+            let i = i + 1;
+        }
+
+        return;
+    }
+
+    /*
+    * Starts the game
+    */
+    method void startGame(){
+        var boolean isGameOver;
+        var boolean wasCorrectGuess;
+        var int line;
+        var char guess;
+        var int indx;
+        
+        let isGameOver = false;
+        let line = 6;
+        do Screen.clearScreen();
+        do drawBase();
+        
+        while(~(isGameOver())){
+            do displayCurrentWord();
+            do Output.moveCursor(line,1);
+            do Output.printString("Tell me your guess: ");
+            let guess = Keyboard.readChar();
+            let wasCorrectGuess = updatedData(guess);
+            do Output.moveCursor(line,23);
+            do updateScreen(wasCorrectGuess);
+            let line = line + 1;
+            do checkAndDraw(guessesLeft);
+        }
+
+        do gameOver();
+        return;
+    }
+    
+    /* 
+    * source: http://nand2tetris-questions-and-answers-forum.32033.n3.nabble.com/Pseudo-Random-Number-Generator-td4026059.html 
+    */
+    method int mod(int a){
+        var int d;
+        var int r;
+        var int b;
+        let b = 10;
+        let d = Math.divide(a,b);
+        let r = a - (b * d);
+        return r;
+    }
+
+
+    /*
+    * Displays current word on screen
+    */
+    method void displayCurrentWord(){
+        do Output.moveCursor(0, 1);
+        do Output.printString("CurrentWord:");
+        do Output.moveCursor(0, 15);
+        do Output.printString(currentWord);
+        return;
+    }
+
+    /*
+    * Updates screen with corresponding messages
+    */
+    method void updateScreen(boolean wasCorrectGuess){
+        if(~wasCorrectGuess){
+            do Output.printString("Incorrect!");
+            let guessesLeft = guessesLeft - 1;
+        } else{
+            do Output.printString("Correct!");
+            if(isSuccess()){ 
+                let guessesLeft = 0;
+            }
+        }
+        
+        do displayCurrentWord();
+        return;
+    }
+
+    /*
+    * Updates global boolean array of correctly guessed letters
+    * 
+    * returns true if guess was correct
+    * returns false otherwise
+    */ 
+    method boolean updatedData(char ch){
+        var int i;
+        var int length;
+        var boolean wasCorrectGuess;
+
+        let i = 0;
+        let length = correctAnswer.length();
+        let wasCorrectGuess = false;
+
+        if(ch = 95){
+            return wasCorrectGuess;
+        }
+
+        while(i < length){
+            if(ch = correctAnswer.charAt(i)){
+                do currentWord.setCharAt(i,ch);
+                let guesses[i] = -1;
+                do correctAnswer.setCharAt(i,95);
+                let wasCorrectGuess = true;
+            }
+            let i = i + 1;
+        }
+        
+        return wasCorrectGuess;
+    }
+
+
+    /*
+    * Draws base
+    */
+    method void drawBase(){
+        do Screen.setColor(true);
+        do Screen.drawRectangle(310,60,312,80);
+        do Screen.drawRectangle(310,60,400,63);
+        do Screen.drawRectangle(395,60,400,180);
+        do Screen.drawRectangle(370, 180, 425, 185);
+        return;
+    }
+
+    /*
+    * Checks updated data and correspondingly updates screen state
+    */
+    method void checkAndDraw(int guessesLeft){
+        if(guessesLeft = 5){
+            do drawHead();
+        }
+        
+        if(guessesLeft = 4){
+            do drawBody();
+        }
+        
+        if(guessesLeft = 3){
+            do drawLeftHand();
+        }
+        
+        if(guessesLeft = 2){
+            do drawRightHand();
+        }
+        
+        if(guessesLeft = 1){
+            do drawLeftLeg();
+        }
+        
+        if(guessesLeft = 0 & ~(isSuccess())){
+            do drawRightLeg();
+        }
+        return;
+    }
+
+
+    method void drawHead() {
+        var int memAddress;
+        let memAddress = 16384+2600+11;
+        do Memory.poke(memAddress+0, 4080);
+        do Memory.poke(memAddress+32, 8184);
+        do Memory.poke(memAddress+64, 12300);
+        do Memory.poke(memAddress+96, 24582);
+        do Memory.poke(memAddress+128, -16381);
+        do Memory.poke(memAddress+160, -16381);
+        do Memory.poke(memAddress+192, -16381);
+        do Memory.poke(memAddress+224, -16381);
+        do Memory.poke(memAddress+256, -16381);
+        do Memory.poke(memAddress+288, -16381);
+        do Memory.poke(memAddress+320, -16381);
+        do Memory.poke(memAddress+352, -16381);
+        do Memory.poke(memAddress+384, 16390);
+        do Memory.poke(memAddress+416, 8204);
+        do Memory.poke(memAddress+448, 8184);
+        do Memory.poke(memAddress+480, 4080);
+        return;
+
+    }
+
+    method void drawBody(){
+        do Screen.drawLine(311, 97, 311, 135);
+        do Screen.drawLine(312, 97, 312, 135);
+        return;
+    }
+
+    method void drawLeftHand(){
+        do Screen.drawLine(311, 114, 296, 99);
+        do Screen.drawLine(311, 115, 296, 100);
+        return;
+    }
+
+    method void drawRightHand(){
+        do Screen.drawLine(311, 115, 326, 100);
+        do Screen.drawLine(311, 116, 326, 101);
+        return;
+    }
+
+    method void drawLeftLeg(){
+        do Screen.drawLine(311, 135, 290, 155);
+        do Screen.drawLine(311, 134, 291, 155);
+        return;
+    }
+
+    method void drawRightLeg(){
+        do Screen.drawLine(312, 134, 332, 155);
+        do Screen.drawLine(312, 135, 333, 155);
+        return;
+    }
+
+    method boolean isGameOver(){
+        if(guessesLeft = 0){
+            return true;
+        }
+        return false;
+    }
+
+  
+    /*
+    * Displays corressponding messages on screen after game is over
+    */
+    method void gameOver(){
+        do Output.moveCursor(18,2);
+        if(isSuccess()){        
+            do Output.printString("       Game Over!");
+            do Output.println();
+            do Output.printString("  Congratulations! You win.");
+        }else {
+            do Output.printString("            Game Over!");
+            do Output.println();
+            do Output.printString("  You lose. Better luck next time UwU");
+        }
+        return;
+    }
+
+    /*
+    * returns true if user won
+    * returns false otherwise
+    */    
+    method boolean isSuccess(){
+        var int i;
+        let i = 0;
+        
+        while(i < correctAnswer.length()){
+            if(guesses[i] = false) {
+                return false;
+            }
+            let i = i + 1;
+        }
+        return true;
+    }
+    
+    /*
+    * Destructor
+    */
+    method void dispose(){
+        do Memory.deAlloc(this);
+        do Memory.deAlloc(guesses);
+        do Memory.deAlloc(lexicon);
+        return;
+    }
+
+}
